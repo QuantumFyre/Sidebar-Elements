@@ -1,0 +1,85 @@
+jQuery.easing['jswing'] = jQuery.easing['swing'];
+
+jQuery.extend( jQuery.easing, {
+	easeOutQuart: function (x, t, b, c, d) {
+		return -c * ((t=t/d-1)*t*t*t - 1) + b;
+	}
+});
+
+let $spinnerContainer = $('.spinner-container');
+let $spinner = $('.spinner');
+let $triangle = $('.triangle');
+let $bearing = $('.bearing');
+let timestamp = null;
+let lastMouseX = null;
+let lastMouseY = null;
+let speed = 0
+let recordSpeed = 0
+
+function spin(speed) {
+  function rotate(degrees) {
+    $spinner.css({
+      'transform': 'rotate(' + degrees + 'deg)'
+    });
+  }
+  $({
+    deg: 0
+  }).animate({
+    deg: 360 * speed
+  }, {
+    duration: 7000,
+    easing: "easeOutQuart",
+    step: function(now) {
+      rotate(now);
+    },
+    start: function() {
+      if (speed > 500) {
+        setTimeout(function() {
+          $spinnerContainer.addClass('warm');
+        }, 1000)
+      }
+      $('body').unbind("mousemove");
+      $('body').unbind("mouseleave");
+      $('body').unbind("mouseup");
+      $('.current-speed-view').html(speed);
+      recordSpeed = recordSpeed < speed ? speed : recordSpeed;
+      $('.record-speed-view').html(recordSpeed);
+    },
+    complete: function() {
+      speed = 0
+      $spinner.css({ transform: '' });
+      $spinnerContainer.removeClass('warm');
+    }
+  });
+}
+
+function detectSpeed(e) {
+  if (timestamp === null) {
+    timestamp = Date.now();
+    lastMouseX = e.screenX;
+    lastMouseY = e.screenY;
+    return;
+  }
+  let now = Date.now();
+  let dt =  now - timestamp;
+  let dx = e.screenX - lastMouseX;
+  let dy = e.screenY - lastMouseY;
+  let speedX = Math.round(dx / dt * 100);
+  let speedY = Math.round(dy / dt * 100);
+  let newSpeed = Math.abs((speedX + speedY) / 2)
+
+  timestamp = now;
+  lastMouseX = e.screenX;
+  lastMouseY = e.screenY;
+  speed = newSpeed
+  
+  $('body').bind('mouseup mouseleave', handleFidgetSpin)
+}
+
+function handleFidgetSpin() {
+  spin(speed)
+}
+
+$bearing.on('mousedown', function() {
+  $('body').bind('mousemove', detectSpeed)
+})

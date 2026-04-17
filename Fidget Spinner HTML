@@ -1,6 +1,280 @@
 <h2 class="stat-field">Current Speed: <span class="current-speed-view"></span></h2>
 <h2 class="stat-field">Record: <span class="record-speed-view"></span></h2>
 
+<head>
+  <style type="type/css">
+    @backgroundColor: #00ff81;
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background: @backgroundColor;
+  margin: 0;
+  padding: 15px;
+  font-family: Helvetica, Arial, Sans-Serif;
+}
+
+.stat-field {
+  margin: 0 0 10px;
+  font-weight: normal;
+}
+
+.wrapper {
+  margin-top: 100px;
+}
+
+.spinner-container {
+  width: 290px;
+  height: 290px;
+  position: relative;
+  left: 0;
+  right: 0;
+  margin: auto;
+  
+  &:after, &:before {
+    content: "";
+    position: absolute;
+    border: 2px solid rgba(255,255,255);
+    z-index: -1;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: 50%;
+    box-shadow: 0px 0px 8px 8px rgba(255,255,255);
+    opacity: 0;
+    transition: opacity 1s;
+  }
+
+  &:before {
+    box-shadow: inset 0px 0px 4px 3px rgba(255,255,255);
+  }
+  
+  &.warm {
+    &:after, &:before {
+      opacity: 1;
+    }
+  }
+}
+
+.spinner {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+@keyframes spin { 
+  from { 
+    transform: rotate(0deg); 
+  } to { 
+    transform: rotate(360deg); 
+  }
+}
+
+.wing-container {
+  position: absolute;
+  height: 100%;
+  width: 85px;
+  margin: auto;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.wing-container.two {
+  transform: rotate(120deg);
+  
+  .bearing::after {
+    background: #00ff81;
+  }
+}
+
+.wing-container.three {
+  transform: rotate(240deg);
+  .bearing::after {
+    background: 00ff81;
+  }
+}
+
+.bearing {
+  position: absolute;
+  height: 85px;
+  width: 100%;
+  background: #000000;
+  box-shadow: 0px 0px 4px 3px rgb(255,255,255);
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+  border-radius: 50%;
+  z-index: 1;
+  
+  &:after {
+    content: '';
+    position: absolute;
+    height: 67%;
+    width: 67%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: auto;
+    background: #00ff81;
+    border-radius: 50%;
+  }
+}
+
+.bridge {
+  position: absolute;
+  height: 19px;
+  width: 30px;
+  background: #000000;
+  left: 0;
+  right: 0;
+  top: 80px;
+  margin: auto;
+  
+  &:after, &:before {
+    content: '';
+    position: absolute;
+    height: 19px;
+    width: 19px;
+    top: 0;
+    left: -50%;
+    margin: auto;
+    background: @backgroundColor;
+    border-radius: 50%;
+  }
+  
+  &:after {
+    left: auto;
+    right: -50%;
+  }
+}
+
+.middle {
+  height: 100px;
+  width: 100px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  border-radius: 50%;
+  background: #000000;
+  box-shadow: 0px 0px 7px 3px rgb(255,255,255);
+  
+  &:after {
+    content: '';
+    position: absolute;
+    height: 67%;
+    width: 67%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: auto;
+    background: #00ff81;
+    border-radius: 50%;
+  }
+}
+  </style>
+  <script type="text/javascrpit">
+    jQuery.easing['jswing'] = jQuery.easing['swing'];
+
+jQuery.extend( jQuery.easing, {
+	easeOutQuart: function (x, t, b, c, d) {
+		return -c * ((t=t/d-1)*t*t*t - 1) + b;
+	}
+});
+
+let $spinnerContainer = $('.spinner-container');
+let $spinner = $('.spinner');
+let $triangle = $('.triangle');
+let $bearing = $('.bearing');
+let timestamp = null;
+let lastMouseX = null;
+let lastMouseY = null;
+let speed = 0
+let recordSpeed = 0
+
+function spin(speed) {
+  function rotate(degrees) {
+    $spinner.css({
+      'transform': 'rotate(' + degrees + 'deg)'
+    });
+  }
+  $({
+    deg: 0
+  }).animate({
+    deg: 360 * speed
+  }, {
+    duration: 7000,
+    easing: "easeOutQuart",
+    step: function(now) {
+      rotate(now);
+    },
+    start: function() {
+      if (speed > 500) {
+        setTimeout(function() {
+          $spinnerContainer.addClass('warm');
+        }, 1000)
+      }
+      $('body').unbind("mousemove");
+      $('body').unbind("mouseleave");
+      $('body').unbind("mouseup");
+      $('.current-speed-view').html(speed);
+      recordSpeed = recordSpeed < speed ? speed : recordSpeed;
+      $('.record-speed-view').html(recordSpeed);
+    },
+    complete: function() {
+      speed = 0
+      $spinner.css({ transform: '' });
+      $spinnerContainer.removeClass('warm');
+    }
+  });
+}
+
+function detectSpeed(e) {
+  if (timestamp === null) {
+    timestamp = Date.now();
+    lastMouseX = e.screenX;
+    lastMouseY = e.screenY;
+    return;
+  }
+  let now = Date.now();
+  let dt =  now - timestamp;
+  let dx = e.screenX - lastMouseX;
+  let dy = e.screenY - lastMouseY;
+  let speedX = Math.round(dx / dt * 100);
+  let speedY = Math.round(dy / dt * 100);
+  let newSpeed = Math.abs((speedX + speedY) / 2)
+
+  timestamp = now;
+  lastMouseX = e.screenX;
+  lastMouseY = e.screenY;
+  speed = newSpeed
+  
+  $('body').bind('mouseup mouseleave', handleFidgetSpin)
+}
+
+function handleFidgetSpin() {
+  spin(speed)
+}
+
+$bearing.on('mousedown', function() {
+  $('body').bind('mousemove', detectSpeed)
+})
+  </script>
+</head>
+
 <div class="wrapper">
   <div class="spinner-container">
     <div class="spinner">

@@ -1,0 +1,22 @@
+<h2 class="stat-field">Current Speed: <span class="current-speed-view"></span></h2>
+<h2 class="stat-field">Record: <span class="record-speed-view"></span></h2>
+
+<div class="wrapper">
+  <div class="spinner-container">
+    <div class="spinner">
+      <div class="wing-container one">
+        <div class="bearing"></div>
+        <div class="bridge"></div>
+      </div>
+      <div class="wing-container two">
+        <div class="bearing"></div>
+        <div class="bridge"></div>
+      </div>
+      <div class="wing-container three">
+        <div class="bearing"></div>
+        <div class="bridge"></div>
+      </div>
+      <div class="middle"></div>
+    </div>
+  </div>
+</div>
